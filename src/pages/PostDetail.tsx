@@ -63,7 +63,7 @@ const PostDetail: React.FC = () => {
             bio
           )
         `)
-        .eq('id', id)
+        .eq('id', parseInt(id!))
         .eq('published', true)
         .single();
 
@@ -88,7 +88,7 @@ const PostDetail: React.FC = () => {
             username
           )
         `)
-        .eq('post_id', id)
+        .eq('post_id', parseInt(id!))
         .eq('approved', true)
         .order('created_at', { ascending: true });
 
@@ -104,7 +104,7 @@ const PostDetail: React.FC = () => {
       const { data, error } = await supabase
         .from('post_likes')
         .select('id')
-        .eq('post_id', id)
+        .eq('post_id', parseInt(id!))
         .eq('user_id', user?.id)
         .single();
 
@@ -125,7 +125,7 @@ const PostDetail: React.FC = () => {
         await supabase
           .from('post_likes')
           .delete()
-          .eq('post_id', id)
+          .eq('post_id', parseInt(id!))
           .eq('user_id', user.id);
         setIsLiked(false);
       } else {

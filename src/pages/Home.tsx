@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Calendar, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Heart, MessageCircle, Calendar, User, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Post {
@@ -21,11 +22,27 @@ interface Post {
 
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredPosts(posts);
+    } else {
+      const filtered = posts.filter(post =>
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.profiles?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredPosts(filtered);
+    }
+  }, [searchTerm, posts]);
 
   const fetchPosts = async () => {
     try {
@@ -47,6 +64,7 @@ const Home: React.FC = () => {
         .order('published_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched posts:', data);
       setPosts(data || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -59,7 +77,7 @@ const Home: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 pt-24 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center text-white">Loading...</div>
+          <div className="text-center text-white">Loading posts...</div>
         </div>
       </div>
     );
@@ -72,13 +90,25 @@ const Home: React.FC = () => {
           <h1 className="text-4xl font-bold text-white mb-4">
             Welcome to BlogSpace
           </h1>
-          <p className="text-gray-300 text-lg">
+          <p className="text-gray-300 text-lg mb-6">
             Discover amazing stories and share your thoughts with the world
           </p>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              type="text"
+              placeholder="Search posts, authors, or content..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
+          </div>
         </GlassCard>
 
         <div className="space-y-6">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <GlassCard key={post.id} className="p-6 hover:bg-white/15 transition-colors">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -118,6 +148,18 @@ const Home: React.FC = () => {
             </GlassCard>
           ))}
         </div>
+
+        {filteredPosts.length === 0 && posts.length > 0 && (
+          <GlassCard className="p-8 text-center">
+            <p className="text-gray-300 text-lg">No posts found matching "{searchTerm}"</p>
+            <Button 
+              onClick={() => setSearchTerm('')}
+              className="mt-4 bg-white text-black hover:bg-gray-200"
+            >
+              Clear Search
+            </Button>
+          </GlassCard>
+        )}
 
         {posts.length === 0 && (
           <GlassCard className="p-8 text-center">

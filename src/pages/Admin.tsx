@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { Users, FileText, Trash2, Edit, Eye } from 'lucide-react';
+import { Users, FileText, Trash2, Eye } from 'lucide-react';
 
 interface AdminUser {
   id: string;
@@ -50,14 +50,26 @@ const Admin: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, created_at');
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      if (authError) throw authError;
 
-      if (error) throw error;
-      setUsers(data || []);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username');
+
+      if (profilesError) throw profilesError;
+
+      const usersWithProfiles = authUsers.users.map(user => ({
+        id: user.id,
+        username: profiles?.find(p => p.id === user.id)?.username || 'No username',
+        email: user.email || 'No email',
+        created_at: user.created_at
+      }));
+
+      setUsers(usersWithProfiles);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast({ title: 'Error fetching users', variant: 'destructive' });
     }
   };
 
@@ -70,6 +82,7 @@ const Admin: React.FC = () => {
           title,
           status,
           created_at,
+          user_id,
           profiles!posts_user_id_fkey (
             username
           )
@@ -80,6 +93,7 @@ const Admin: React.FC = () => {
       setPosts(data || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
+      toast({ title: 'Error fetching posts', variant: 'destructive' });
     }
   };
 
@@ -113,7 +127,7 @@ const Admin: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center px-4">
         <GlassCard className="p-8 w-full max-w-md">
-          <h1 className="text-3xl font-bold text-white text-center mb-8">Admin Login</h1>
+          <h1 className="text-3xl font-bold text-white text-center mb-8">Admin Portal</h1>
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
@@ -145,7 +159,7 @@ const Admin: React.FC = () => {
               type="submit"
               className="w-full bg-white text-black hover:bg-gray-200"
             >
-              Login as Admin
+              Login to Admin Portal
             </Button>
           </form>
         </GlassCard>
@@ -159,13 +173,22 @@ const Admin: React.FC = () => {
         <GlassCard className="p-8 mb-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-            <Button
-              onClick={() => setIsAuthenticated(false)}
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              Logout
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => navigate('/')}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Back to Site
+              </Button>
+              <Button
+                onClick={() => setIsAuthenticated(false)}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Logout
+              </Button>
+            </div>
           </div>
         </GlassCard>
 
@@ -176,7 +199,7 @@ const Admin: React.FC = () => {
             className={activeTab === 'users' ? 'bg-white text-black' : 'border-white/20 text-white hover:bg-white/10'}
           >
             <Users className="h-4 w-4 mr-2" />
-            Manage Users
+            Manage Users ({users.length})
           </Button>
           <Button
             onClick={() => setActiveTab('posts')}
@@ -184,7 +207,7 @@ const Admin: React.FC = () => {
             className={activeTab === 'posts' ? 'bg-white text-black' : 'border-white/20 text-white hover:bg-white/10'}
           >
             <FileText className="h-4 w-4 mr-2" />
-            Manage Posts
+            Manage Posts ({posts.length})
           </Button>
         </div>
 
@@ -195,8 +218,8 @@ const Admin: React.FC = () => {
               {users.map((user) => (
                 <div key={user.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                   <div>
-                    <h3 className="text-white font-medium">{user.username || 'No username'}</h3>
-                    <p className="text-gray-400 text-sm">ID: {user.id}</p>
+                    <h3 className="text-white font-medium">{user.username}</h3>
+                    <p className="text-gray-400 text-sm">{user.email}</p>
                     <p className="text-gray-400 text-sm">
                       Joined: {new Date(user.created_at).toLocaleDateString()}
                     </p>
@@ -220,7 +243,9 @@ const Admin: React.FC = () => {
                     <h3 className="text-white font-medium">{post.title}</h3>
                     <p className="text-gray-400 text-sm">
                       By: {post.profiles?.username || 'Unknown'} • 
-                      Status: {post.status} • 
+                      Status: <span className={`capitalize ${post.status === 'published' ? 'text-green-400' : 'text-yellow-400'}`}>
+                        {post.status}
+                      </span> • 
                       Created: {new Date(post.created_at).toLocaleDateString()}
                     </p>
                   </div>
