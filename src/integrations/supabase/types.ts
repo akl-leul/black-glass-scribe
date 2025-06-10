@@ -108,6 +108,7 @@ export type Database = {
           created_at: string
           id: number
           post_id: number
+          user_id: string | null
         }
         Insert: {
           approved?: boolean
@@ -117,6 +118,7 @@ export type Database = {
           created_at?: string
           id?: number
           post_id: number
+          user_id?: string | null
         }
         Update: {
           approved?: boolean
@@ -126,6 +128,7 @@ export type Database = {
           created_at?: string
           id?: number
           post_id?: number
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -290,6 +293,35 @@ export type Database = {
         }
         Relationships: []
       }
+      post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_tags: {
         Row: {
           id: number
@@ -332,12 +364,15 @@ export type Database = {
           excerpt: string
           featured_image: string | null
           id: number
+          likes_count: number | null
           published: boolean
           published_at: string | null
           read_time: number
           slug: string
+          status: string | null
           title: string
           updated_at: string
+          user_id: string | null
           views: number
         }
         Insert: {
@@ -348,12 +383,15 @@ export type Database = {
           excerpt: string
           featured_image?: string | null
           id?: number
+          likes_count?: number | null
           published?: boolean
           published_at?: string | null
           read_time?: number
           slug: string
+          status?: string | null
           title: string
           updated_at?: string
+          user_id?: string | null
           views?: number
         }
         Update: {
@@ -364,12 +402,15 @@ export type Database = {
           excerpt?: string
           featured_image?: string | null
           id?: number
+          likes_count?: number | null
           published?: boolean
           published_at?: string | null
           read_time?: number
           slug?: string
+          status?: string | null
           title?: string
           updated_at?: string
+          user_id?: string | null
           views?: number
         }
         Relationships: [
@@ -388,6 +429,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
       }
       restaurant_tables: {
         Row: {
