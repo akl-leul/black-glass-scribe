@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -11,13 +11,44 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { Save, Send } from 'lucide-react';
 
-const CreatePost: React.FC = () => {
+const EditPost: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+
+  useEffect(() => {
+    if (id && user) {
+      fetchPost();
+    }
+  }, [id, user]);
+
+  const fetchPost = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      
+      setTitle(data.title);
+      setContent(data.content);
+      setExcerpt(data.excerpt);
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      toast({ title: 'Post not found or access denied', variant: 'destructive' });
+      navigate('/dashboard');
+    } finally {
+      setFetchLoading(false);
+    }
+  };
 
   const generateSlug = (title: string) => {
     return title
@@ -28,7 +59,7 @@ const CreatePost: React.FC = () => {
 
   const handleSave = async (publish: boolean) => {
     if (!user) {
-      toast({ title: 'You must be logged in to create a post', variant: 'destructive' });
+      toast({ title: 'You must be logged in to edit a post', variant: 'destructive' });
       return;
     }
 
@@ -40,32 +71,33 @@ const CreatePost: React.FC = () => {
     setLoading(true);
 
     try {
-      const postData = {
+      const updateData = {
         title: title.trim(),
         content: content.trim(),
         excerpt: excerpt.trim() || content.substring(0, 150) + '...',
         slug: generateSlug(title),
-        user_id: user.id,
         published: publish,
         status: publish ? 'published' : 'draft',
         published_at: publish ? new Date().toISOString() : null,
-        author_id: 1 // Required by schema
+        updated_at: new Date().toISOString()
       };
 
       const { error } = await supabase
         .from('posts')
-        .insert([postData]);
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
       toast({ 
-        title: publish ? 'Post published successfully!' : 'Draft saved successfully!' 
+        title: publish ? 'Post published successfully!' : 'Draft updated successfully!' 
       });
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('Error saving post:', error);
+      console.error('Error updating post:', error);
       toast({
-        title: 'Error saving post',
+        title: 'Error updating post',
         description: error.message,
         variant: 'destructive'
       });
@@ -74,11 +106,21 @@ const CreatePost: React.FC = () => {
     }
   };
 
+  if (fetchLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 pt-24 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center text-white">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 pt-24 px-4">
       <div className="max-w-4xl mx-auto">
         <GlassCard className="p-8">
-          <h1 className="text-3xl font-bold text-white mb-8">Create New Post</h1>
+          <h1 className="text-3xl font-bold text-white mb-8">Edit Post</h1>
           
           <div className="space-y-6">
             <div>
@@ -140,4 +182,4 @@ const CreatePost: React.FC = () => {
   );
 };
 
-export default CreatePost;
+export default EditPost;

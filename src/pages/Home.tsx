@@ -16,7 +16,7 @@ interface Post {
   likes_count: number;
   profiles: {
     username: string;
-  };
+  } | null;
 }
 
 const Home: React.FC = () => {
@@ -38,7 +38,8 @@ const Home: React.FC = () => {
           content,
           published_at,
           likes_count,
-          profiles (
+          user_id,
+          profiles!posts_user_id_fkey (
             username
           )
         `)

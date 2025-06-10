@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/glass-card';
-import { LogOut, User, PenTool, Home } from 'lucide-react';
+import { LogOut, User, PenTool, Home, Settings } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -38,6 +38,12 @@ export const Navbar: React.FC = () => {
                   <Button variant="ghost" className="text-white hover:bg-white/20">
                     <User className="h-4 w-4 mr-2" />
                     Dashboard
+                  </Button>
+                </Link>
+                <Link to="/profile">
+                  <Button variant="ghost" className="text-white hover:bg-white/20">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Profile
                   </Button>
                 </Link>
                 <Button 
